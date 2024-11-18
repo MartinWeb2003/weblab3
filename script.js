@@ -173,9 +173,9 @@ function collisionDetection() {
                         ctx.font = "24px Arial";
                         ctx.fillStyle = "#FFFFFF";
                         ctx.textAlign = "center";
-                        ctx.fillText("Čestitamo, pobijedili ste!", canvas.width / 2, canvas.height / 2);
-                        ctx.fillText("Vaš rezultat: " + score, canvas.width / 2, canvas.height / 2 + 30);
-                        ctx.fillText("Pritisnite razmaknicu za ponovno igranje", canvas.width / 2, canvas.height / 2 + 60);
+                        ctx.fillText("YOU WIN", canvas.width / 2, canvas.height / 2);
+                        ctx.fillText("SCORE: " + score, canvas.width / 2, canvas.height / 2 + 30);
+                        ctx.fillText("Pritisnite SPACE za ponovno igranje", canvas.width / 2, canvas.height / 2 + 60);
                         gameOver = true;
                         return;
                     }
@@ -236,13 +236,13 @@ function drawScore() {
     ctx.font = "16px Arial";
     ctx.fillStyle = "#FFFFFF";
     ctx.textAlign = "left";
-    ctx.fillText("Bodovi: " + score, 8, 20);
+    ctx.fillText("SCORE: " + score, 8, 20);
     ctx.textAlign = "right";
-    ctx.fillText("Najbolji rezultat: " + highScore, canvas.width - 8, 20);
+    ctx.fillText("HIGH SCORE: " + highScore, canvas.width - 8, 20);
 
     if (comboActive && comboCount > 1) {
         ctx.textAlign = "center";
-        ctx.fillText("Kombo x" + comboCount, canvas.width / 2, 20);
+        ctx.fillText("COMBO x" + comboCount, canvas.width / 2, 20);
     }
 }
 
@@ -274,7 +274,7 @@ function draw() {
         ctx.font = "24px Arial";
         ctx.fillStyle = "#FFFFFF";
         ctx.textAlign = "center";
-        ctx.fillText("Pritisnite razmaknicu za početak igre", canvas.width / 2, canvas.height / 2);
+        ctx.fillText("Pritisnite SPACE za početak igre", canvas.width / 2, canvas.height / 2);
         return;
     }
 
@@ -341,7 +341,7 @@ function draw() {
         ctx.textAlign = "center";
         ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
         ctx.font = "24px Arial";
-        ctx.fillText("Pritisnite razmaknicu za ponovno igranje", canvas.width / 2, canvas.height / 2 + 50);
+        ctx.fillText("Pritisnite SPACE za ponovno igranje", canvas.width / 2, canvas.height / 2 + 50);
         return;
     } else {
         ball.x += ball.dx;
@@ -356,9 +356,9 @@ function draw() {
         ctx.font = "24px Arial";
         ctx.fillStyle = "#FFFFFF";
         ctx.textAlign = "center";
-        ctx.fillText("Čestitamo, pobijedili ste!", canvas.width / 2, canvas.height / 2);
-        ctx.fillText("Vaš rezultat: " + score, canvas.width / 2, canvas.height / 2 + 30);
-        ctx.fillText("Pritisnite razmaknicu za ponovno igranje", canvas.width / 2, canvas.height / 2 + 60);
+        ctx.fillText("YOU WIN", canvas.width / 2, canvas.height / 2);
+        ctx.fillText("SCORE: " + score, canvas.width / 2, canvas.height / 2 + 30);
+        ctx.fillText("Pritisnite SPACE za ponovno igranje", canvas.width / 2, canvas.height / 2 + 60);
         gameOver = true;
         return;
     }
