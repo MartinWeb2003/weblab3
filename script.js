@@ -1,20 +1,25 @@
+// Dohvaćanje canvas elementa iz DOM-a
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let rightPressed = false;
-let leftPressed = false;
-let score = 0;
-let highScore = 0;
-let gameOver = false;
-let gameStarted = false;
-let comboActive = false;
-let comboTimer;
-let comboCount = 0;
+// Postavljanje veličine canvasa na veličinu prozora preglednika
+canvas.width = document.documentElement.clientWidth;
+canvas.height = document.documentElement.clientHeight;
 
+// Ključne varijable za igru
+let rightPressed = false; 
+let leftPressed = false;  
+let score = 0;            
+let highScore = 0;        
+let gameOver = false;     
+let gameStarted = false;  
+
+// Provjera postoji li high score u lokalnoj pohrani
 if (localStorage.getItem('breakoutHighScore')) {
     highScore = localStorage.getItem('breakoutHighScore');
 }
 
+// Definicija objekta loptice
 const ball = {
     radius: 10,
     x: canvas.width / 2,
@@ -24,47 +29,71 @@ const ball = {
     dy: 0
 };
 
+// Funkcija za inicijalizaciju loptice
 function initializeBall() {
-    ball.speed = 4;
-    let angle = Math.random() * Math.PI / 2 + Math.PI / 4;
-    ball.dx = ball.speed * Math.cos(angle);
-    ball.dy = -ball.speed * Math.sin(angle);
-    ball.x = canvas.width / 2;
-    ball.y = paddle.y - ball.radius - 1;
+    ball.speed = 8; // Brža lopta
+    let angle = Math.random() * Math.PI / 2 + Math.PI / 4; // Nasumični kut između 45° i 135°
+    ball.dx = ball.speed * Math.cos(angle);  
+    ball.dy = -ball.speed * Math.sin(angle); 
+    ball.x = canvas.width / 2;               
+    ball.y = paddle.y - ball.radius - 1;   
 }
 
+// palica
 const paddle = {
     height: 20,
-    width: 100,
-    x: (canvas.width - 100) / 2,
-    y: canvas.height - 20,
-    speed: 7
+    width: 150,
+    x: (canvas.width - 150) / 2,
+    y: canvas.height - 30,
+    speed: 12
 };
 
+// cigle
 const brick = {
-    rowCount: 5,
-    columnCount: 9,
-    width: 50,
-    height: 20,
-    padding: 10,
-    offsetTop: 30,
-    offsetLeft: 35
+    rowCount: 6,
+    columnCount: 8,
+    width: 0,
+    height: 30,
+    padding: 20,
+    offsetTop: 100,
+    offsetLeft: 100
 };
 
+// Dinamička sirina cigle
+let totalPadding = brick.padding * (brick.columnCount - 1);
+let availableWidth = canvas.width - 2 * brick.offsetLeft - totalPadding;
+brick.width = availableWidth / brick.columnCount;
+
+// polje cigli
 const bricks = [];
 for (let c = 0; c < brick.columnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brick.rowCount; r++) {
-        bricks[c][r] = { x: 0, y: 0, status: 1 };
+        let brickX = (c * (brick.width + brick.padding)) + brick.offsetLeft;
+        let brickY = (r * (brick.height + brick.padding)) + brick.offsetTop;
+        bricks[c][r] = { x: brickX, y: brickY, status: 1 };
     }
 }
 
+// Pozadinska pjesma(Hail To The King 8-bit)
+const backgroundMusic = new Audio('background.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.2;
+
+
+window.addEventListener('load', () => {
+    backgroundMusic.play().catch((error) => {
+        console.log('Autoplay failed:', error);
+    });
+});
+
+// je li korisnik pritisnuo tipku
 function keyDownHandler(e) {
     if (e.code === "Space") {
         if (!gameStarted) {
             gameStarted = true;
             initializeBall();
-            draw();
+            draw(); // Početak igre
         } else if (gameOver) {
             resetGame();
         }
@@ -77,6 +106,7 @@ function keyDownHandler(e) {
     }
 }
 
+// korisnik pustio tipku
 function keyUpHandler(e) {
     if (e.key === "Right" || e.key === "ArrowRight") {
         rightPressed = false;
@@ -86,6 +116,7 @@ function keyUpHandler(e) {
     }
 }
 
+// sudar lopte i cigle
 function collisionDetection() {
     for (let c = 0; c < brick.columnCount; c++) {
         for (let r = 0; r < brick.rowCount; r++) {
@@ -96,8 +127,10 @@ function collisionDetection() {
                 let brickWidth = brick.width;
                 let brickHeight = brick.height;
 
-                if (ball.x + ball.radius > brickX && ball.x - ball.radius < brickX + brickWidth &&
-                    ball.y + ball.radius > brickY && ball.y - ball.radius < brickY + brickHeight) {
+                if (ball.x + ball.radius > brickX &&
+                    ball.x - ball.radius < brickX + brickWidth &&
+                    ball.y + ball.radius > brickY &&
+                    ball.y - ball.radius < brickY + brickHeight) {
 
                     let collision = false;
                     let corners = [
@@ -115,7 +148,7 @@ function collisionDetection() {
 
                         if (distance <= ball.radius) {
                             collision = true;
-                            let angle45 = Math.PI / 4;
+                            let angle45 = Math.PI / 4; //sudar s kutevima cigle
                             if (i === 0) {
                                 ball.dx = -ball.speed * Math.cos(angle45);
                                 ball.dy = -ball.speed * Math.sin(angle45);
@@ -150,32 +183,20 @@ function collisionDetection() {
                     }
 
                     b.status = 0;
-                    score += 100;
-
-                    if (comboActive) {
-                        comboCount++;
-                        score += 50;
-                        clearTimeout(comboTimer);
-                    } else {
-                        comboActive = true;
-                        comboCount = 1;
-                    }
-                    comboTimer = setTimeout(() => {
-                        comboActive = false;
-                        comboCount = 0;
-                    }, 2000);
+                    score += 1;
 
                     if (isGameWon()) {
                         if (score > highScore) {
                             highScore = score;
                             localStorage.setItem('breakoutHighScore', highScore);
                         }
+                        // Prikaz poruke o pobjedi
                         ctx.font = "24px Arial";
                         ctx.fillStyle = "#FFFFFF";
                         ctx.textAlign = "center";
-                        ctx.fillText("YOU WIN", canvas.width / 2, canvas.height / 2);
+                        ctx.fillText("CONGRATULATIONS, YOU WON!", canvas.width / 2, canvas.height / 2);
                         ctx.fillText("SCORE: " + score, canvas.width / 2, canvas.height / 2 + 30);
-                        ctx.fillText("Pritisnite SPACE za ponovno igranje", canvas.width / 2, canvas.height / 2 + 60);
+                        ctx.fillText("Press SPACE to play again", canvas.width / 2, canvas.height / 2 + 60);
                         gameOver = true;
                         return;
                     }
@@ -187,6 +208,7 @@ function collisionDetection() {
     }
 }
 
+//je li igra dobivena
 function isGameWon() {
     for (let c = 0; c < brick.columnCount; c++) {
         for (let r = 0; r < brick.rowCount; r++) {
@@ -198,6 +220,7 @@ function isGameWon() {
     return true;
 }
 
+// crtanje loptice
 function drawBall() {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
@@ -206,58 +229,71 @@ function drawBall() {
     ctx.closePath();
 }
 
+// crtanje palice
 function drawPaddle() {
     ctx.beginPath();
     ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
     ctx.fillStyle = "#FF0000";
     ctx.fill();
+
+    // Sjenčanje ruba
+    ctx.shadowColor = '#FF0000';
+    ctx.shadowBlur = 10;
+
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "#FF0000";
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
     ctx.closePath();
 }
 
+//crtanje cigli
 function drawBricks() {
     for (let c = 0; c < brick.columnCount; c++) {
         for (let r = 0; r < brick.rowCount; r++) {
             if (bricks[c][r].status === 1) {
-                let brickX = (c * (brick.width + brick.padding)) + brick.offsetLeft;
-                let brickY = (r * (brick.height + brick.padding)) + brick.offsetTop;
-                bricks[c][r].x = brickX;
-                bricks[c][r].y = brickY;
+                let b = bricks[c][r];
                 ctx.beginPath();
-                ctx.rect(brickX, brickY, brick.width, brick.height);
+                ctx.rect(b.x, b.y, brick.width, brick.height);
                 ctx.fillStyle = "#0095DD";
                 ctx.fill();
+
+                // Sjenčanje ruba
+                ctx.shadowColor = '#0095DD';
+                ctx.shadowBlur = 10;
+
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = "#0095DD";
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
                 ctx.closePath();
             }
         }
     }
 }
 
+//prikaz rezultata
 function drawScore() {
-    ctx.font = "16px Arial";
+    ctx.font = "20px Arial";
     ctx.fillStyle = "#FFFFFF";
-    ctx.textAlign = "left";
-    ctx.fillText("SCORE: " + score, 8, 20);
     ctx.textAlign = "right";
-    ctx.fillText("HIGH SCORE: " + highScore, canvas.width - 8, 20);
-
-    if (comboActive && comboCount > 1) {
-        ctx.textAlign = "center";
-        ctx.fillText("COMBO x" + comboCount, canvas.width / 2, 20);
-    }
+    ctx.fillText("SCORE: " + score, canvas.width - 20, 30);
+    ctx.fillText("HIGH SCORE: " + highScore, canvas.width - 20, 60);
 }
 
+// resetiraj igru
 function resetGame() {
     score = 0;
     gameOver = false;
     gameStarted = true;
-    comboActive = false;
-    comboCount = 0;
-    clearTimeout(comboTimer);
 
     initializeBall();
 
     paddle.x = (canvas.width - paddle.width) / 2;
 
+    // cigle
     for (let c = 0; c < brick.columnCount; c++) {
         for (let r = 0; r < brick.rowCount; r++) {
             bricks[c][r].status = 1;
@@ -267,6 +303,7 @@ function resetGame() {
     draw();
 }
 
+// Glavna funkcija
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -274,7 +311,7 @@ function draw() {
         ctx.font = "24px Arial";
         ctx.fillStyle = "#FFFFFF";
         ctx.textAlign = "center";
-        ctx.fillText("Pritisnite SPACE za početak igre", canvas.width / 2, canvas.height / 2);
+        ctx.fillText("Press SPACE to start the game", canvas.width / 2, canvas.height / 2);
         return;
     }
 
@@ -283,6 +320,7 @@ function draw() {
     drawPaddle();
     drawScore();
 
+    // palica lijevo desno
     if (rightPressed && paddle.x < canvas.width - paddle.width) {
         paddle.x += paddle.speed;
     }
@@ -292,6 +330,7 @@ function draw() {
 
     collisionDetection();
 
+    // sudar loptice i zida
     if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
         ball.dx = -ball.dx;
     }
@@ -299,15 +338,14 @@ function draw() {
         ball.dy = -ball.dy;
     }
 
+    // sudar loptice i palice
     if (ball.dy > 0) {
         if (ball.y + ball.radius >= paddle.y && ball.y + ball.radius <= paddle.y + paddle.height) {
             if (ball.x + ball.radius >= paddle.x && ball.x - ball.radius <= paddle.x + paddle.width) {
                 ball.dy = -ball.dy;
 
-                ball.speed *= 1.01;
-
-                if (ball.speed < 4) {
-                    ball.speed = 4;
+                if (ball.speed < 8) {
+                    ball.speed = 8;
                 }
 
                 let angle = Math.atan2(-ball.dy, ball.dx);
@@ -316,49 +354,43 @@ function draw() {
 
                 let deltaX = ball.x - (paddle.x + paddle.width / 2);
                 ball.dx = deltaX * 0.1;
-
-                let newSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-                ball.speed = newSpeed;
-
-                if (ball.speed < 4) {
-                    ball.speed = 4;
-                    let normalizationFactor = ball.speed / newSpeed;
-                    ball.dx *= normalizationFactor;
-                    ball.dy *= normalizationFactor;
-                }
             }
         }
     }
 
-    if (ball.y + ball.radius > paddle.y + 20) {
+    // je li lopta ispod palice
+    if (ball.y + ball.radius > canvas.height) {
         gameOver = true;
         if (score > highScore) {
             highScore = score;
             localStorage.setItem('breakoutHighScore', highScore);
         }
+        // game over
         ctx.font = "48px Arial";
         ctx.fillStyle = "#FFFFFF";
         ctx.textAlign = "center";
         ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
         ctx.font = "24px Arial";
-        ctx.fillText("Pritisnite SPACE za ponovno igranje", canvas.width / 2, canvas.height / 2 + 50);
+        ctx.fillText("Press SPACE to play again", canvas.width / 2, canvas.height / 2 + 50);
         return;
     } else {
-        ball.x += ball.dx;
+        ball.x += ball.dx; 
         ball.y += ball.dy;
     }
 
+    // je li pobjedio
     if (!gameOver && isGameWon()) {
         if (score > highScore) {
             highScore = score;
             localStorage.setItem('breakoutHighScore', highScore);
         }
+        // poruka o pobjedi
         ctx.font = "24px Arial";
         ctx.fillStyle = "#FFFFFF";
         ctx.textAlign = "center";
-        ctx.fillText("YOU WIN", canvas.width / 2, canvas.height / 2);
+        ctx.fillText("CONGRATULATIONS, YOU WON!", canvas.width / 2, canvas.height / 2);
         ctx.fillText("SCORE: " + score, canvas.width / 2, canvas.height / 2 + 30);
-        ctx.fillText("Pritisnite SPACE za ponovno igranje", canvas.width / 2, canvas.height / 2 + 60);
+        ctx.fillText("Press SPACE to play again", canvas.width / 2, canvas.height / 2 + 60);
         gameOver = true;
         return;
     }
@@ -368,7 +400,9 @@ function draw() {
     }
 }
 
+// Dodavanje event listenera
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 
+// početna poruke
 draw();
